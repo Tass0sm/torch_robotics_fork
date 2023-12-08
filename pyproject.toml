@@ -1,0 +1,19 @@
+[tool.poetry]
+name = "torch-robotics"
+version = "0.1.0"
+description = "Full Differentiable Kinematics Tree Implementation constructed from URDF"
+authors = ["An Thai Le <an.thai.le97@gmail.com>", "João Carvalho <joao@robot-learning.de>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = ">=3.8"
+pyyaml = "^6.0.1"
+urdf-parser-py = "^0.0.4"
+trimesh = "^4.0.5"
+einops = "^0.7.0"
+matplotlib = "^3.7"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
