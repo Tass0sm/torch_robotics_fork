@@ -508,6 +508,33 @@ MultiBoxField = MultiRoundedBoxField
 #         super().__init__(**kwargs)
 
 
+class EmptyField(PrimitiveShapeField):
+
+    def __init__(self, dim=3, tensor_args=None):
+        """
+        Parameters
+        ----------
+            dim : int
+                Dimension of distance field.
+        """
+        super().__init__(dim=dim, tensor_args=tensor_args)
+
+    def __repr__(self):
+        return f"EmptyField(dim={self.dim})"
+
+    def compute_signed_distance_impl(self, x):
+        return torch.ones(x.shape[0], device=x.device) * float("inf")
+
+    def zero_grad(self):
+        pass
+
+    def add_to_occupancy_map(self, obst_map):
+        return obst_map
+
+    def render(self, ax, pos=None, ori=None, color='gray', cmap='gray', **kwargs):
+        pass
+
+
 ########################################################################################################################
 class ObjectField(PrimitiveShapeField):
 
