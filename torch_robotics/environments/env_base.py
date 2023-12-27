@@ -4,6 +4,7 @@ from abc import ABC
 import numpy as np
 import torch
 from matplotlib import pyplot as plt
+from scipy.spatial.transform import Rotation as R
 from torch.autograd.functional import jacobian
 
 from torch_robotics.environments.grid_map_sdf import GridMapSDF
@@ -118,6 +119,17 @@ class EnvBase(ABC):
                 obj.zero_grad()
             except:
                 raise NotImplementedError
+
+    def random_poses(self, n_samples):
+        xy_distribution = torch.distributions.uniform.Uniform(self.limits[0], self.limits[1])
+        xy_points = xy_distribution.sample((n_samples,), )
+
+        random_theta_vec = np.random.rand(n_samples) * 2 * np.pi
+        random_euler_angles = np.pad(random_theta_vec.reshape((n_samples, 1)), ((0, 0), (2, 0)), mode='constant', constant_values=0)
+        random_rotations = R.from_euler("xyz", random_euler_angles)
+        random_quats = torch.tensor(random_rotations.as_quat(), device=xy_points.device)
+
+        return torch.hstack((xy_points, random_quats)).to(torch.float32)
 
     def render(self, ax=None):
         if self.obj_fixed_list is not None:
@@ -312,4 +324,3 @@ if __name__ == '__main__':
     # Render gradient of sdf
     env.render_grad_sdf(ax, fig)
     plt.show()
-

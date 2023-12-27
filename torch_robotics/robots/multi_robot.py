@@ -122,3 +122,11 @@ class MultiRobot(RobotBase):
                                       linestyle=linestyle)
 
             q_offset += robot.q_dim
+
+    # Updating Base Poses
+    def update_base_poses(self, base_poses):
+        """Update bases for every robot panda subrobot."""
+
+        for robot, base_pose in zip(self.subrobots, base_poses):
+            assert robot.name == "RobotPanda"
+            robot.diff_panda.update_base_pose(base_pose)

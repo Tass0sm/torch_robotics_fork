@@ -100,12 +100,17 @@ class PlanningTask(Task):
         else:
             return self.robot.random_q(**kwargs)
 
-    def random_coll_free_q(self, n_samples=1, max_samples=1000, max_tries=1000):
+    def random_coll_free_q(self, n_samples=1, max_samples=1000, max_tries=1000, randomize_base=False):
         # Random position in configuration space not in collision
         reject = True
         samples = torch.zeros((n_samples, self.robot.q_dim), **self.tensor_args)
         idx_begin = 0
         for i in range(max_tries):
+            if randomize_base:
+                assert self.robot.name == "MultiRobot"
+                base_poses = self.env.random_poses(len(self.robot.subrobots))
+                self.robot.update_base_poses(base_poses)
+
             qs = self.robot.random_q(max_samples)
             in_collision = self.compute_collision(qs).squeeze()
             idxs_not_in_collision = torch.argwhere(in_collision == False).squeeze()
