@@ -523,7 +523,10 @@ class EmptyField(PrimitiveShapeField):
         return f"EmptyField(dim={self.dim})"
 
     def compute_signed_distance_impl(self, x):
-        return torch.ones(x.shape[0], device=x.device) * float("inf")
+        # Note: this causes problems with autograd. Not sure how to get it to
+        # just read zero gradient. Current work-around: eliminate this field
+        # from trajectory optimizations
+        return torch.ones(x.shape[0], **self.tensor_args) * float("inf")
 
     def zero_grad(self):
         pass

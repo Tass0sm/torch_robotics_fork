@@ -47,15 +47,18 @@ class PlanningTask(Task):
         self.df_collision_self = self.robot.df_collision_self
 
         # collision field for objects
-        self.df_collision_objects = CollisionObjectDistanceField(
-            self.robot,
-            df_obj_list_fn=self.env.get_df_obj_list,
-            link_idxs_for_collision_checking=self.robot.link_idxs_for_object_collision_checking,
-            num_interpolated_points=self.robot.num_interpolated_points_for_object_collision_checking,
-            link_margins_for_object_collision_checking_tensor=self.robot.link_margins_for_object_collision_checking_tensor,
-            cutoff_margin=obstacle_cutoff_margin,
-            tensor_args=self.tensor_args
-        )
+        if self.env.obj_fixed_list is not None:
+            self.df_collision_objects = CollisionObjectDistanceField(
+                self.robot,
+                df_obj_list_fn=self.env.get_df_obj_list,
+                link_idxs_for_collision_checking=self.robot.link_idxs_for_object_collision_checking,
+                num_interpolated_points=self.robot.num_interpolated_points_for_object_collision_checking,
+                link_margins_for_object_collision_checking_tensor=self.robot.link_margins_for_object_collision_checking_tensor,
+                cutoff_margin=obstacle_cutoff_margin,
+                tensor_args=self.tensor_args
+            )
+        else:
+            self.df_collision_objects = None
 
         if self.env.obj_extra_list is not None:
             self.df_collision_extra_objects = CollisionObjectDistanceField(
