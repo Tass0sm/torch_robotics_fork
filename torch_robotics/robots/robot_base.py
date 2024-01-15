@@ -201,6 +201,11 @@ class RobotBase(ABC):
         raise NotImplementedError
 
     @abc.abstractmethod
+    def get_num_links(self):
+        # return: links_collision_positions
+        raise NotImplementedError
+
+    @abc.abstractmethod
     def render(self, ax, **kwargs):
         raise NotImplementedError
 

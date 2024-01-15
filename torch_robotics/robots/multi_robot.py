@@ -80,6 +80,9 @@ class MultiRobot(RobotBase):
         res = torch.concatenate(subrobot_fks, axis=-2)
         return res
 
+    def get_num_links(self):
+        return self.total_num_links
+
     def render(self, ax, q=None, color='blue', cmap='Blues', margin_multiplier=1., **kwargs):
         q_offset = 0
         subrobot_fks = []

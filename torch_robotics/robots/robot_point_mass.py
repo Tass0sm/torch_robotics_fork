@@ -31,6 +31,9 @@ class RobotPointMass(RobotBase):
         # Add tasks space dimension
         return q.unsqueeze(-2)
 
+    def get_num_links(self):
+        return 1
+
     def render(self, ax, q=None, color='blue', cmap='Blues', margin_multiplier=1., **kwargs):
         if q is not None:
             margin = self.link_margins_for_object_collision_checking[0] * margin_multiplier

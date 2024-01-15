@@ -195,6 +195,9 @@ class RobotPanda(RobotBase):
         else:
             return link_quat_from_link_tensor(ee_pose)
 
+    def get_num_links(self):
+        return len(self.diff_panda._model.links)
+
     def render(self, ax, q=None, color='blue', arrow_length=0.15, arrow_alpha=1.0, arrow_linewidth=2.0,
                draw_links_spheres=False, **kwargs):
         # draw skeleton
