@@ -11,7 +11,21 @@ from torch_robotics.robots.robot_point_mass import RobotPointMass
 from torch_robotics.torch_utils.torch_utils import to_numpy, to_torch
 
 import matplotlib.collections as mcoll
+from scipy.spatial.transform import Rotation as R
+from corallab_sim.utilities.spatial import get_transform, transform_point
 from copy import deepcopy
+
+
+def apply_transform(pose, points, tensor_args):
+    if pose is None:
+        return points
+    else:
+        cpu_pose = pose.clone().cpu()
+        t = torch.tensor(get_transform(pos=cpu_pose[:3], rotq=cpu_pose[3:]), **tensor_args)
+        homogenous_points = torch.nn.functional.pad(points, (0, 1), mode="constant", value=1)
+        homogenous_points_prime = torch.matmul(t, homogenous_points.mT)
+        points_prime = homogenous_points_prime.mT[..., :3]
+        return points_prime
 
 
 class MultiRobot(RobotBase):
@@ -33,6 +47,11 @@ class MultiRobot(RobotBase):
             raise ValueError("Need to provide subrobot_id or subrobots")
 
         q_limits = torch.hstack([robot.q_limits for robot in self.subrobots])
+        self.n_subrobots = len(self.subrobots)
+
+        # default base poses from which FK originates
+        default_pose = None
+        self.base_poses = [default_pose] * self.n_subrobots
 
         link_names_for_object_collision_checking = []
         for i, robot in enumerate(self.subrobots):
@@ -146,9 +165,11 @@ class MultiRobot(RobotBase):
     def fk_map_collision_impl(self, q, **kwargs):
         q_offset = 0
         subrobot_fks = []
-        for robot in self.subrobots:
+
+        for base_pose, robot in zip(self.base_poses, self.subrobots):
             subrobot_q = q[..., q_offset:q_offset+robot.q_dim]
             subrobot_fk = robot.fk_map_collision_impl(subrobot_q, **kwargs)
+            subrobot_fk = apply_transform(base_pose, subrobot_fk, self.tensor_args)
             subrobot_fks.append(subrobot_fk)
             q_offset += robot.q_dim
 
@@ -202,10 +223,11 @@ class MultiRobot(RobotBase):
 
             q_offset += robot.q_dim
 
-    # Updating Base Poses
     def update_base_poses(self, base_poses):
         """Update bases for every robot panda subrobot."""
+        self.base_poses = base_poses
 
-        for robot, base_pose in zip(self.subrobots, base_poses):
-            assert robot.name == "RobotPanda"
-            robot.diff_panda.update_base_pose(base_pose)
+    def get_base_poses(self):
+        """Get bases for every robot panda subrobot."""
+        return self.base_poses
+
