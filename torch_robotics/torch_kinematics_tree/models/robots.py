@@ -56,9 +56,9 @@ def modidy_franka_panda_urdf_grasped_object(robot_file, grasped_object):
 class DifferentiableFrankaPanda(DifferentiableTree):
     def __init__(self, link_list: Optional[str] = None, gripper=False, device='cpu', grasped_object=None):
         if gripper:
-            robot_file = get_robot_path() / 'franka_description' / 'robots' / 'panda_arm_hand.urdf'
+            robot_file = get_robot_path() / 'franka_description' / 'panda_arm_hand.urdf'
         else:
-            robot_file = get_robot_path() / 'franka_description' / 'robots' / 'panda_arm_no_gripper.urdf'
+            robot_file = get_robot_path() / 'franka_description' / 'panda_arm_no_gripper.urdf'
 
         # Modify the urdf to append the link of the grasped object
         if grasped_object is not None:
