@@ -69,6 +69,19 @@ class DifferentiableFrankaPanda(DifferentiableTree):
         super().__init__(self.model_path, self.name, link_list=link_list, device=device)
 
 
+class DifferentiableUR5(DifferentiableTree):
+    def __init__(self, link_list: Optional[str] = None, attach_gripper=False, device='cpu'):
+        robot_path = get_robot_path()
+        if attach_gripper:
+            raise NotImplementedError
+            robot_file = robot_path / 'ur5' / 'urdf' / 'ur5_suction.urdf'
+        else:
+            robot_file = robot_path / 'ur5' / 'urdf' / 'ur5.urdf'
+        self.model_path = robot_file.as_posix()
+        self.name = "differentiable_ur5"
+        super().__init__(self.model_path, self.name, link_list=link_list, device=device)
+
+
 class DifferentiableUR10(DifferentiableTree):
     def __init__(self, link_list: Optional[str] = None, attach_gripper=False, device='cpu'):
         robot_path = get_robot_path()
