@@ -105,6 +105,17 @@ class RobotPanda(RobotBase):
             idx = self.diff_panda._name_to_idx_map[link_name]
             link_idxs_for_self_collision_checking.append(idx)
 
+        link_margins_for_self_collision_checking = [
+            0.08, # hand
+            0.1, # link0
+            0.1, # link1
+            0.125, # link2
+            0.125, # link3
+            0.075, # link 4
+            0.13, # link 5
+            0.1, # link 6
+        ]
+
         #############################################
         super().__init__(
             name='RobotPanda',
@@ -116,6 +127,7 @@ class RobotPanda(RobotBase):
             margin_for_grasped_object_collision_checking=0.001,  # small margin for object placement
             num_interpolated_points_for_object_collision_checking=len(link_names_for_object_collision_checking),
             link_names_for_self_collision_checking=link_names_for_self_collision_checking,
+            link_margins_for_self_collision_checking=link_margins_for_self_collision_checking,
             link_names_pairs_for_self_collision_checking=link_names_pairs_for_self_collision_checking,
             link_idxs_for_self_collision_checking=link_idxs_for_self_collision_checking,
             num_interpolated_points_for_self_collision_checking=len(link_names_for_self_collision_checking),

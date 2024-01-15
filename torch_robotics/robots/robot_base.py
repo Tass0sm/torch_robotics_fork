@@ -25,6 +25,7 @@ class RobotBase(ABC):
             link_names_pairs_for_self_collision_checking=None,
             link_idxs_for_self_collision_checking=None,
             self_collision_margin_robot=0.001,
+            link_margins_for_self_collision_checking=None,
             link_names_for_self_collision_checking_with_grasped_object=None,
             self_collision_margin_grasped_object=0.05,
             num_interpolated_points_for_self_collision_checking=1,
@@ -66,6 +67,8 @@ class RobotBase(ABC):
         self.num_interpolated_points_for_object_collision_checking = num_interpolated_points_for_object_collision_checking
         self.link_names_for_object_collision_checking = link_names_for_object_collision_checking
         self.n_links_for_object_collision_checking = len(link_names_for_object_collision_checking)
+
+        # link margins
         self.link_margins_for_object_collision_checking = link_margins_for_object_collision_checking
         self.link_margins_for_object_collision_checking_robot_tensor = torch.tensor(
             link_margins_for_object_collision_checking, **self.tensor_args).repeat_interleave(
@@ -131,10 +134,28 @@ class RobotBase(ABC):
 
             self_collision_margin_vector = to_torch(self_collision_margin_vector, **self.tensor_args)
 
+            # link margins
+            if link_margins_for_self_collision_checking is None:
+                self.link_margins_for_self_collision_checking = link_margins_for_object_collision_checking
+            else:
+                self.link_margins_for_self_collision_checking = link_margins_for_self_collision_checking
+
+            self.link_pair_margins_for_self_collision_checking_robot_tensor = torch.tensor([
+                self.link_margins_for_self_collision_checking[i] + self.link_margins_for_self_collision_checking[j] for i, j in idxs_links_distance_matrix
+            ], **self.tensor_args)
+
+            # TODO: Support interpolated self collision checking
+            # self.link_pair_margins_for_self_collision_checking_robot_tensor = self.link_pair_margins_for_self_collision_checking_robot_tensor.repeat_interleave(
+            #     num_interpolated_points_for_self_collision_checking // len(self.link_pair_margins_for_self_collision_checking_robot_tensor)
+            # )
+
+            self.link_pair_margins_for_self_collision_checking_tensor = self.link_pair_margins_for_self_collision_checking_robot_tensor
+
             self.df_collision_self = CollisionSelfField(
                 self,
                 link_idxs_for_collision_checking=self.link_idxs_for_self_collision_checking,
                 idxs_links_distance_matrix=idxs_links_distance_matrix,
+                link_pair_margins_for_self_collision_checking_tensor = self.link_pair_margins_for_self_collision_checking_tensor,
                 num_interpolated_points=num_interpolated_points_for_self_collision_checking,
                 cutoff_margin=self_collision_margin_vector,
                 tensor_args=self.tensor_args

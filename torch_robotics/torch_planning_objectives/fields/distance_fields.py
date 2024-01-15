@@ -204,8 +204,8 @@ class EmbodimentDistanceFieldBase(DistanceField):
 
 class CollisionSelfField(EmbodimentDistanceFieldBase):
 
-    def __init__(self, *args, idxs_links_distance_matrix=None, **kwargs):
-        super().__init__(*args, collision_margins=0., **kwargs)
+    def __init__(self, *args, idxs_links_distance_matrix=None, link_pair_margins_for_self_collision_checking_tensor=None, **kwargs):
+        super().__init__(*args, collision_margins=link_pair_margins_for_self_collision_checking_tensor, **kwargs)
         self.idxs_links_distance_matrix = idxs_links_distance_matrix
         self.idxs_links_distance_matrix_tuple = tuple(zip(*idxs_links_distance_matrix))
 
@@ -233,7 +233,7 @@ class CollisionSelfField(EmbodimentDistanceFieldBase):
         return distances
 
     def compute_embodiment_collision(self, q, link_pos, **kwargs):  # position tensor
-        margin = kwargs.get('margin', self.cutoff_margin)
+        margin = kwargs.get('margin', self.cutoff_margin) + self.collision_margins
         link_pos = link_pos[..., self.link_idxs_for_collision_checking, :]
         distances = self.compute_embodiment_signed_distances(q, link_pos, **kwargs)
         any_self_collision = torch.any(distances < margin, dim=-1)
