@@ -192,13 +192,32 @@ class MultiRobot(RobotBase):
             self, ax, trajs=None, start_state=None, goal_state=None, colors=['blue'],
             linestyle='solid', **kwargs):
 
+        # trajs = trajs.clone().cpu()
+        # start_state = start_state.clone().cpu()
+        # goal_state = goal_state.clone().cpu()
+
+        has_velocity = False
+
+        if trajs.shape[-1] < self.q_dim:
+            raise Exception("Invalid trajectory dimension (too small)")
+        elif trajs.shape[-1] == self.q_dim:
+            has_velocity = False
+        elif trajs.shape[-1] == 2 * self.q_dim:
+            has_velocity = True
+        else:
+            raise Exception("Invalid trajectory dimension (too large)")
+
         q_offset = 0
         subrobot_fks = []
         for robot in self.subrobots:
             # Select subset of trajectory for current robot
             position_selector = np.arange(q_offset, q_offset+robot.q_dim)
-            velocity_selector = np.arange(self.q_dim + q_offset, self.q_dim + q_offset+robot.q_dim)
-            subrobot_selector = np.hstack((position_selector, velocity_selector))
+            if has_velocity:
+                velocity_selector = np.arange(self.q_dim + q_offset, self.q_dim + q_offset+robot.q_dim)
+                subrobot_selector = np.hstack((position_selector, velocity_selector))
+            else:
+                subrobot_selector = position_selector
+
             subrobot_trajs = trajs[..., subrobot_selector]
 
             # Select subset of start state for current robot
