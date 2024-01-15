@@ -11,6 +11,7 @@ from torch_robotics.robots.robot_point_mass import RobotPointMass
 from torch_robotics.torch_utils.torch_utils import to_numpy, to_torch
 
 import matplotlib.collections as mcoll
+from copy import deepcopy
 
 
 class MultiRobot(RobotBase):
@@ -40,9 +41,14 @@ class MultiRobot(RobotBase):
             )
 
         link_margins_for_object_collision_checking = []
+        link_margins_for_self_collision_checking = []
         for robot in self.subrobots:
             link_margins_for_object_collision_checking.extend(
                 robot.link_margins_for_object_collision_checking
+            )
+
+            link_margins_for_self_collision_checking.extend(
+                robot.link_margins_for_self_collision_checking
             )
 
         link_idx_offset = 0
@@ -56,13 +62,83 @@ class MultiRobot(RobotBase):
         # TODO: Figure out
         num_interpolated_points_for_object_collision_checking = len(link_names_for_object_collision_checking)
 
+        # TODO: Self Collision Checking
+
+        # A multi robot should always have self collision checking because it is
+        # necessarily contains multiple links.
+
+        link_names_for_self_collision_checking = []
+        link_names_pairs_for_self_collision_checking = {}
+        link_names_for_all_pairs = []
+        link_idxs_for_self_collision_checking = []
+        link_idx_offset = 0
+        link_names_for_self_collision_checking_with_grasped_object = []
+        self_collision_margin_robot = 0.05
+
+        for i, robot in enumerate(self.subrobots):
+            if robot.df_collision_self is None:
+                # If the subrobot has no self collision field, it is only a
+                # single link. Then the multi robot's self collision field
+                # should consider it.
+                new_links = [f"r{i}_{name}" for name in robot.link_names_for_object_collision_checking]
+                link_names_for_self_collision_checking.extend(new_links)
+
+                if len(link_names_for_all_pairs) > 0:
+                    for link in new_links:
+                        link_names_pairs_for_self_collision_checking[link] = deepcopy(link_names_for_all_pairs)
+
+                link_names_for_all_pairs.extend(new_links)
+
+                new_link_idxs = [link_idx_offset + idx for idx in robot.link_idxs_for_object_collision_checking]
+                link_idxs_for_self_collision_checking.extend(new_link_idxs)
+
+                # TODO: Intelligently determine self collision margin from subrobots
+                self_collision_margin_robot = max(self_collision_margin_robot, 0.1)
+            else:
+                # If the subrobot has a self collision field, then it should
+                # incorporate that subrobot's own self collision info into the
+                # new field, in addition to considering collisions with the
+                # other subrobots.
+
+                new_links = [f"r{i}_{name}" for name in robot.link_names_for_self_collision_checking]
+                link_names_for_self_collision_checking.extend(new_links)
+
+                for k, v in robot.link_names_pairs_for_self_collision_checking.items():
+                    r_k = f"r{i}_{k}"
+                    r_vs = [f"r{i}_{link_name}" for link_name in v]
+
+                    link_names_pairs_for_self_collision_checking[r_k] = [*r_vs, *link_names_for_all_pairs]
+
+                link_names_for_all_pairs.extend(new_links)
+
+                new_link_idxs = [link_idx_offset + idx for idx in robot.link_idxs_for_self_collision_checking]
+                link_idxs_for_self_collision_checking.extend(new_link_idxs)
+
+                self_collision_margin_robot = max(self_collision_margin_robot, 0.15)
+
+            link_idx_offset += robot.get_num_links()
+
+        # TODO: Figure out
+        num_interpolated_points_for_self_collision_checking = len(link_names_for_self_collision_checking)
+
+        self.total_num_links = link_idx_offset
+
         super().__init__(
             name=name,
             q_limits=q_limits,
+            # object collision
             link_names_for_object_collision_checking=link_names_for_object_collision_checking,
             link_margins_for_object_collision_checking=link_margins_for_object_collision_checking,
             link_idxs_for_object_collision_checking=link_idxs_for_object_collision_checking,
             num_interpolated_points_for_object_collision_checking=num_interpolated_points_for_object_collision_checking,
+            # self collision
+            link_names_for_self_collision_checking=link_names_for_self_collision_checking,
+            link_margins_for_self_collision_checking=link_margins_for_self_collision_checking,
+            link_names_pairs_for_self_collision_checking=link_names_pairs_for_self_collision_checking,
+            link_idxs_for_self_collision_checking=link_idxs_for_self_collision_checking,
+            num_interpolated_points_for_self_collision_checking=num_interpolated_points_for_self_collision_checking,
+            self_collision_margin_robot=self_collision_margin_robot,
+            # misc
             tensor_args=tensor_args,
             **kwargs
         )
