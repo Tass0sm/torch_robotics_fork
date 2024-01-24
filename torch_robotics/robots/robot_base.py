@@ -86,6 +86,12 @@ class RobotBase(ABC):
 
         ################################################################################################
         # Self collision field
+
+        if link_margins_for_self_collision_checking is None:
+            self.link_margins_for_self_collision_checking = link_margins_for_object_collision_checking
+        else:
+            self.link_margins_for_self_collision_checking = link_margins_for_self_collision_checking
+
         if link_names_for_self_collision_checking is None:
             self.df_collision_self = None
         else:
@@ -133,12 +139,6 @@ class RobotBase(ABC):
                 self_collision_margin_vector.extend([self.self_collision_margin_grasped_object] * total_self_distances_grasped_object)
 
             self_collision_margin_vector = to_torch(self_collision_margin_vector, **self.tensor_args)
-
-            # link margins
-            if link_margins_for_self_collision_checking is None:
-                self.link_margins_for_self_collision_checking = link_margins_for_object_collision_checking
-            else:
-                self.link_margins_for_self_collision_checking = link_margins_for_self_collision_checking
 
             self.link_pair_margins_for_self_collision_checking_robot_tensor = torch.tensor([
                 self.link_margins_for_self_collision_checking[i] + self.link_margins_for_self_collision_checking[j] for i, j in idxs_links_distance_matrix
