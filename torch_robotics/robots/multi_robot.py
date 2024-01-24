@@ -35,6 +35,7 @@ class MultiRobot(RobotBase):
                  subrobot_id=None,
                  subrobot_count=1,
                  subrobots=[],
+                 include_base_poses=False,
                  tensor_args=None,
                  **kwargs):
 
@@ -49,10 +50,34 @@ class MultiRobot(RobotBase):
         q_limits = torch.hstack([robot.q_limits for robot in self.subrobots])
         self.n_subrobots = len(self.subrobots)
 
+        self.include_base_poses = include_base_poses
+
         # default base poses from which FK originates
         default_pose = None
         self.base_poses = [default_pose] * self.n_subrobots
+        self.base_pose_q_dim = 4
 
+        # free q selector
+        free_q_selector_offset = 0
+        free_q_selector_elements = []
+        fixed_q_selector_offset = 0
+        fixed_q_selector_elements = []
+
+        for robot in self.subrobots:
+            fixed_q_selector_length = fixed_q_selector_offset + self.base_pose_q_dim
+            fixed_q_selector_elements.extend(range(fixed_q_selector_offset, fixed_q_selector_length))
+            fixed_q_selector_offset += fixed_q_selector_length + robot.q_dim
+
+            free_q_selector_offset += self.base_pose_q_dim
+            free_q_selector_length = free_q_selector_offset + robot.q_dim
+            free_q_selector_elements.extend(range(free_q_selector_offset, free_q_selector_length))
+            free_q_selector_offset = free_q_selector_length
+
+        self.free_q_selector = torch.tensor(free_q_selector_elements)
+        self.fixed_q_selector = torch.tensor(fixed_q_selector_elements)
+        self.fixed_and_free_q_dim = free_q_selector_length
+
+        # collision checking
         link_names_for_object_collision_checking = []
         for i, robot in enumerate(self.subrobots):
             link_names_for_object_collision_checking.extend(
@@ -60,12 +85,13 @@ class MultiRobot(RobotBase):
             )
 
         link_margins_for_object_collision_checking = []
-        link_margins_for_self_collision_checking = []
         for robot in self.subrobots:
             link_margins_for_object_collision_checking.extend(
                 robot.link_margins_for_object_collision_checking
             )
 
+        link_margins_for_self_collision_checking = []
+        for robot in self.subrobots:
             link_margins_for_self_collision_checking.extend(
                 robot.link_margins_for_self_collision_checking
             )
@@ -166,6 +192,8 @@ class MultiRobot(RobotBase):
         q_offset = 0
         subrobot_fks = []
 
+        q = self.safe_select_free_q(q)
+
         for base_pose, robot in zip(self.base_poses, self.subrobots):
             subrobot_q = q[..., q_offset:q_offset+robot.q_dim]
             subrobot_fk = robot.fk_map_collision_impl(subrobot_q, **kwargs)
@@ -197,6 +225,7 @@ class MultiRobot(RobotBase):
         # goal_state = goal_state.clone().cpu()
 
         has_velocity = False
+        trajs = self.safe_select_free_q(trajs)
 
         if trajs.shape[-1] < self.q_dim:
             raise Exception("Invalid trajectory dimension (too small)")
@@ -250,3 +279,92 @@ class MultiRobot(RobotBase):
         """Get bases for every robot panda subrobot."""
         return self.base_poses
 
+    def insert_base_pose_qs(self, qs, has_velocity=True):
+        if has_velocity:
+            new_q_shape = (*qs.shape[:-1], 2 * self.fixed_and_free_q_dim)
+        else:
+            new_q_shape = (*qs.shape[:-1], self.fixed_and_free_q_dim)
+
+        new_q_arr = torch.zeros(new_q_shape, **self.tensor_args)
+
+        base_pose_qs_list = [self.q_from_pose(pose) for pose in self.get_base_poses()]
+        base_pose_qs = torch.concatenate(base_pose_qs_list)
+
+        new_q_arr[..., self.fixed_q_selector] = base_pose_qs
+
+        if has_velocity:
+            velocity_selector = self.fixed_and_free_q_dim + self.free_q_selector
+            selector = torch.concatenate((self.free_q_selector, velocity_selector))
+        else:
+            selector = self.free_q_selector
+
+        new_q_arr[..., selector] = qs
+        return new_q_arr
+
+    def remove_base_pose_qs(self, qs, has_velocity=True):
+        if has_velocity:
+            velocity_selector = self.fixed_and_free_q_dim + self.free_q_selector
+            selector = torch.concatenate((self.free_q_selector, velocity_selector))
+        else:
+            selector = self.free_q_selector
+
+        return qs[..., selector]
+
+
+    def full_q_idx_to_free_q_idx(self, i):
+        if i in self.fixed_q_selector:
+            return None
+        else:
+            return self.free_q_selector.tolist().index(i)
+
+    def q_from_pose(self, pose):
+        position = pose[:3]
+        theta = torch.tensor(R.from_quat(pose[3:].cpu()).as_euler("xyz")[2:], **self.tensor_args)
+        return torch.concatenate((position, theta))
+
+    def pose_from_q(self, q):
+        position = q[:3]
+        theta = q[3].cpu().item()
+        quat = R.from_euler("xyz", [0., 0., theta]).as_quat()
+        quat_tensor = torch.tensor(quat, **self.tensor_args)
+        return torch.concatenate((position, quat_tensor))
+
+    def all_poses_from_q(self, q):
+        """Get bases for every robot panda subrobot."""
+        poses = []
+        base_q = q[self.fixed_q_selector]
+        offset = 0
+
+        for robot in self.subrobots:
+            subrobot_base_q = base_q[offset:offset+self.base_pose_q_dim]
+            pose = self.pose_from_q(subrobot_base_q)
+            poses.append(pose)
+            offset += self.base_pose_q_dim
+
+        return poses
+
+    # overrides
+    def get_position(self, x):
+        if self.include_base_poses:
+            return x[..., :self.fixed_and_free_q_dim]
+        else:
+            return x[..., :self.q_dim]
+
+    def get_velocity(self, x):
+        if self.include_base_poses:
+            return x[..., self.fixed_and_free_q_dim:]
+        else:
+            return x[..., self.q_dim:]
+
+    def safe_select_free_q(self, q):
+        if self.include_base_poses:
+            if q.shape[-1] == self.fixed_and_free_q_dim:
+                return self.remove_base_pose_qs(q, has_velocity=False)
+            elif q.shape[-1] == 2 * self.fixed_and_free_q_dim:
+                return self.remove_base_pose_qs(q, has_velocity=True)
+            elif q.shape[-1] == self.q_dim:
+                return q
+            else:
+                raise Exception("Input has unexpected dimensions")
+        else:
+            return q
