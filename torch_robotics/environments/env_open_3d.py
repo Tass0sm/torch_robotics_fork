@@ -1,9 +1,10 @@
 import numpy as np
 import torch
 from matplotlib import pyplot as plt
+import pybullet as p
 
 from torch_robotics.environments.env_base import EnvBase
-from torch_robotics.robots import RobotPointMass, RobotPanda, MultiRobot
+from torch_robotics.robots import RobotPointMass, RobotPanda, RobotUR5, MultiRobot
 from torch_robotics.torch_utils.torch_utils import DEFAULT_TENSOR_ARGS
 from torch_robotics.visualizers.planning_visualizer import create_fig_and_axes
 
@@ -13,10 +14,16 @@ class EnvOpen3D(EnvBase):
     def __init__(self, name='EnvOpen3D', tensor_args=None, **kwargs):
         super().__init__(
             name=name,
-            limits=torch.tensor([[-1, -1, -1], [1, 1, 1]], **tensor_args),  # environments limits
+            limits=torch.tensor([[-2, -2, -0.25], [2, 2, 2]], **tensor_args),  # environments limits
             tensor_args=tensor_args,
             **kwargs
         )
+
+    def setup_pybullet_env(self):
+        self.pb_objs = []
+
+        plane_id = p.loadURDF("plane.urdf", basePosition=[0, 0, -0.05])
+        self.pb_objs.append(plane_id)
 
     def get_gpmp2_params(self, robot=None):
         params = dict(
@@ -25,8 +32,8 @@ class EnvOpen3D(EnvBase):
             sigma_start=1e-3,
             sigma_gp=1e-1,
             sigma_goal_prior=1e-3,
-            sigma_coll=1e-4,
-            step_size=1e0,
+            sigma_coll=1e-3,
+            step_size=1e-2,
             sigma_start_init=1e-4,
             sigma_goal_init=1e-4,
             sigma_gp_init=0.1,
@@ -43,7 +50,10 @@ class EnvOpen3D(EnvBase):
             },
             stop_criteria=0.1,
         )
+
         if isinstance(robot, RobotPanda):
+            return params
+        elif isinstance(robot, RobotUR5):
             return params
         elif isinstance(robot, MultiRobot):
             return params
@@ -59,12 +69,16 @@ class EnvOpen3D(EnvBase):
 
             max_time=90
         )
+
         if isinstance(robot, RobotPanda):
+            return params
+        elif isinstance(robot, RobotUR5):
             return params
         elif isinstance(robot, MultiRobot):
             return params
         else:
             raise NotImplementedError
+
 
 if __name__ == '__main__':
     env = EnvOpen3D(

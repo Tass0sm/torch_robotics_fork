@@ -44,7 +44,7 @@ class EnvOpen2D(EnvBase):
             sigma_start=1e-5,
             sigma_gp=1e-2,
             sigma_goal_prior=1e-5,
-            sigma_coll=1e-5,
+            sigma_coll=1e-3,
             step_size=1e-1,
             sigma_start_init=1e-4,
             sigma_goal_init=1e-4,
@@ -85,6 +85,24 @@ class EnvOpen2D(EnvBase):
             return params
         else:
             raise NotImplementedError
+
+    def get_stomp_params(self, robot=None):
+        params = dict(
+            num_samples=16,
+            n_support_points=64,
+            dt=0.04,
+            opt_iters=1,  # Keep this 1 for visualization
+            step_size=0.05,
+            pos_only=False,
+        )
+
+        if isinstance(robot, RobotPointMass):
+            return params
+        elif isinstance(robot, MultiRobot):
+            return params
+        else:
+            raise NotImplementedError
+
 
 
 if __name__ == '__main__':

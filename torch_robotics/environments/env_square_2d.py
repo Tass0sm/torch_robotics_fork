@@ -5,7 +5,7 @@ from matplotlib import pyplot as plt
 from torch_robotics.environments.env_base import EnvBase
 from torch_robotics.environments.primitives import ObjectField, MultiSphereField, MultiBoxField
 from torch_robotics.environments.utils import create_grid_spheres
-from torch_robotics.robots import RobotPointMass
+from torch_robotics.robots import RobotPointMass, MultiRobot
 from torch_robotics.torch_utils.torch_utils import DEFAULT_TENSOR_ARGS
 from torch_robotics.visualizers.planning_visualizer import create_fig_and_axes
 
@@ -46,6 +46,8 @@ class EnvSquare2D(EnvBase):
         )
         if isinstance(robot, RobotPointMass):
             return params
+        elif isinstance(robot, MultiRobot):
+            return params
         else:
             raise NotImplementedError
 
@@ -70,6 +72,8 @@ class EnvSquare2D(EnvBase):
             },
         )
         if isinstance(robot, RobotPointMass):
+            return params
+        elif isinstance(robot, MultiRobot):
             return params
         else:
             raise NotImplementedError

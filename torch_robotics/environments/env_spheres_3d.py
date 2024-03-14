@@ -4,14 +4,14 @@ from matplotlib import pyplot as plt
 
 from torch_robotics.environments.env_base import EnvBase
 from torch_robotics.environments.primitives import ObjectField, MultiSphereField
-from torch_robotics.robots import RobotPointMass, RobotPanda
+from torch_robotics.robots import RobotPointMass, RobotPanda, MultiRobot
 from torch_robotics.torch_utils.torch_utils import DEFAULT_TENSOR_ARGS
 from torch_robotics.visualizers.planning_visualizer import create_fig_and_axes
 
 
 class EnvSpheres3D(EnvBase):
 
-    def __init__(self, name='EnvDense2D', tensor_args=None, **kwargs):
+    def __init__(self, name='EnvSpheres3D', tensor_args=None, **kwargs):
         spheres = MultiSphereField(torch.tensor([
                     [-0.3, 0.3, 0.85],
                     [-0.35, -0.25, 0.45],
@@ -76,6 +76,8 @@ class EnvSpheres3D(EnvBase):
         )
         if isinstance(robot, RobotPanda):
             return params
+        elif isinstance(robot, MultiRobot):
+            return params
         else:
             raise NotImplementedError
 
@@ -89,6 +91,8 @@ class EnvSpheres3D(EnvBase):
             max_time=90
         )
         if isinstance(robot, RobotPanda):
+            return params
+        elif isinstance(robot, MultiRobot):
             return params
         else:
             raise NotImplementedError
@@ -104,7 +108,8 @@ if __name__ == '__main__':
     ax.set_ylabel('y')
     ax.set_zlabel('z')
     env.render(ax)
-    plt.show()
+    fig.savefig("env-spheres-3d-render.png")
+    plt.close(fig)
 
     # Render sdf
     fig, ax = create_fig_and_axes(env.dim)
@@ -112,4 +117,5 @@ if __name__ == '__main__':
 
     # Render gradient of sdf
     env.render_grad_sdf(ax, fig)
-    plt.show()
+    fig.savefig("env-spheres-3d-sdf.png")
+    plt.close(fig)
