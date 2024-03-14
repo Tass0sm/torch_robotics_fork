@@ -19,6 +19,7 @@ moviepy = "^1.0.3"
 numpy = "<1.24"
 scipy = "^1.10"
 isaacgym = {path = "/home/tassos/phd/qureshi/isaac-gym/isaacgym/python"}
+corallab-sim = {path = "../corallab-sim"}
 
 
 [build-system]
