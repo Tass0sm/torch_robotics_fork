@@ -4,7 +4,6 @@ from matplotlib import pyplot as plt
 import pybullet as p
 
 from torch_robotics.environments.env_base import EnvBase
-from torch_robotics.robots import RobotPointMass, RobotPanda, RobotUR5, MultiRobot
 from torch_robotics.torch_utils.torch_utils import DEFAULT_TENSOR_ARGS
 from torch_robotics.visualizers.planning_visualizer import create_fig_and_axes
 
@@ -50,12 +49,9 @@ class EnvOpen3D(EnvBase):
             },
             stop_criteria=0.1,
         )
-
-        if isinstance(robot, RobotPanda):
+        if robot.name == "RobotPanda":
             return params
-        elif isinstance(robot, RobotUR5):
-            return params
-        elif isinstance(robot, MultiRobot):
+        elif robot.name == "MultiRobot":
             return params
         else:
             raise NotImplementedError
@@ -69,12 +65,9 @@ class EnvOpen3D(EnvBase):
 
             max_time=90
         )
-
-        if isinstance(robot, RobotPanda):
+        if robot.name == "RobotPanda":
             return params
-        elif isinstance(robot, RobotUR5):
-            return params
-        elif isinstance(robot, MultiRobot):
+        elif robot.name == "MultiRobot":
             return params
         else:
             raise NotImplementedError

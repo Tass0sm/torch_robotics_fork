@@ -6,7 +6,6 @@ from matplotlib import pyplot as plt
 
 from torch_robotics.environments.env_base import EnvBase
 from torch_robotics.environments.primitives import ObjectField, MultiBoxField
-from torch_robotics.robots import RobotPanda
 from torch_robotics.torch_utils.torch_utils import DEFAULT_TENSOR_ARGS
 from torch_robotics.visualizers.planning_visualizer import create_fig_and_axes
 
@@ -121,7 +120,7 @@ class EnvTableShelf(EnvBase):
                 'method': 'cholesky',
             },
         )
-        if isinstance(robot, RobotPanda):
+        if robot.name == "RobotPanda":
             return params
         else:
             raise NotImplementedError
@@ -134,7 +133,7 @@ class EnvTableShelf(EnvBase):
             n_pre_samples=50000,
             max_time=15
         )
-        if isinstance(robot, RobotPanda):
+        if robot.name == "RobotPanda":
             return params
         else:
             raise NotImplementedError

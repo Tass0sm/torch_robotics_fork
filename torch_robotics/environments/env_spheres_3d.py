@@ -4,7 +4,6 @@ from matplotlib import pyplot as plt
 
 from torch_robotics.environments.env_base import EnvBase
 from torch_robotics.environments.primitives import ObjectField, MultiSphereField
-from torch_robotics.robots import RobotPointMass, RobotPanda, MultiRobot
 from torch_robotics.torch_utils.torch_utils import DEFAULT_TENSOR_ARGS
 from torch_robotics.visualizers.planning_visualizer import create_fig_and_axes
 
@@ -74,7 +73,7 @@ class EnvSpheres3D(EnvBase):
             },
             stop_criteria=0.1,
         )
-        if isinstance(robot, RobotPanda):
+        if robot.name == "RobotPanda":
             return params
         elif isinstance(robot, MultiRobot):
             return params
@@ -90,7 +89,7 @@ class EnvSpheres3D(EnvBase):
 
             max_time=90
         )
-        if isinstance(robot, RobotPanda):
+        if robot.name == "RobotPanda":
             return params
         elif isinstance(robot, MultiRobot):
             return params
