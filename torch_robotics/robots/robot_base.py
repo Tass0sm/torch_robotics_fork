@@ -34,6 +34,16 @@ class RobotBase(ABC):
             tensor_args=None,
             **kwargs
     ):
+        """
+        link_margins_for_object_collision_checking:
+             radii for each link's collision checking sphere (for other objects)
+
+        self_collision_margin_robot:
+        self_collision_margin_grasped_object:
+             extra self collision margin
+        """
+
+
         self.name = name
         self.tensor_args = tensor_args
 
@@ -158,6 +168,7 @@ class RobotBase(ABC):
                 link_pair_margins_for_self_collision_checking_tensor = self.link_pair_margins_for_self_collision_checking_tensor,
                 num_interpolated_points=num_interpolated_points_for_self_collision_checking,
                 cutoff_margin=self_collision_margin_vector,
+                clamp_sdf=True,
                 tensor_args=self.tensor_args
             )
 

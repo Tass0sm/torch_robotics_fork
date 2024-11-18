@@ -15,7 +15,7 @@ class RobotDisk(RobotPointMass):
     def __init__(self,
                  name='RobotDisk',
                  q_limits=torch.tensor([[-1, -1], [1, 1]]),  # configuration space limits
-                 radius=0.15,
+                 radius=0.10,
                  **kwargs):
         super(RobotPointMass, self).__init__(
             name=name,
