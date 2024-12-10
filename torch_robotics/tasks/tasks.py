@@ -55,6 +55,7 @@ class PlanningTask(Task):
                 num_interpolated_points=self.robot.num_interpolated_points_for_object_collision_checking,
                 link_margins_for_object_collision_checking_tensor=self.robot.link_margins_for_object_collision_checking_tensor,
                 cutoff_margin=obstacle_cutoff_margin,
+                clamp_sdf=True,
                 tensor_args=self.tensor_args
             )
         else:
